@@ -45,7 +45,7 @@ botaoBaixar.addEventListener("click", () => {
   URL.revokeObjectURL(url);
 });
 window.handleCredentialResponse = function(response){
-  const data = JSON.parse(atob(response.credential.split('.')[1]));
+  const data = JSON.parse(atob(response.credential.split(".")[1]));
   document.getElementById('email').value = data.email;
-  document.getElementById('mensagem').textContent='logado com ${data.email}';
+  document.getElementById('mensagem').textContent=`logado com ${data.email}`;
 }
