@@ -12,13 +12,6 @@ const mensagem = document.getElementById("mensagem");
 const botaoBaixar = document.getElementById("baixar");
 
 let svgAtual = "";
-let idToken = null;
-
-window.handleCredentialResponse = function(response) {
-  idToken = response.credential;
-  const data = JSON.parse(atob(response.credential.split(".")[1]));
-  mensagem.textContent = `Logado com ${data.email}!`;
-}
 
 formulario.addEventListener("submit", async (evento) => {
   evento.preventDefault();
@@ -26,7 +19,7 @@ formulario.addEventListener("submit", async (evento) => {
 
   const numero = Number(campoNumero.value);
 
-  if (!idToken) {
+  if (!window.idToken) {
     mensagem.textContent = "Faça login com Google primeiro!";
     return;
   }
@@ -39,26 +32,26 @@ formulario.addEventListener("submit", async (evento) => {
   const res = await fetch("/api/desenho", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ numero: numero, token: idToken })
+    body: JSON.stringify({ numero: numero, token: window.idToken })
   });
 
   const dados = await res.json();
 
-  if (dados.svg) {
-    svgAtual = dados.svg;
-    area.innerHTML = svgAtual;
-    botaoBaixar.hidden = false;
-  } else {
-    mensagem.textContent = dados.erro || "Erro";
+  if (dados.erro) {
+    mensagem.textContent = dados.erro;
+    return;
   }
+
+  svgAtual = dados.svg;
+  area.innerHTML = svgAtual;
 });
 
 botaoBaixar.addEventListener("click", () => {
-  const arquivo = new Blob([svgAtual], { type: "image/svg+xml" });
-  const url = URL.createObjectURL(arquivo);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "exemplo.svg";
-  link.click();
-  URL.revokeObjectURL(url);
+  if (!svgAtual) return;
+  const blob = new Blob([svgAtual], { type: "image/svg+xml" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "desenho.svg";
+  a.click();
 });
