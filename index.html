@@ -6,6 +6,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Desenho Assinado</title>
   <link rel="stylesheet" href="style.css">
+  <script>
+  function handleCredentialResponse(response) {
+    window.idToken = response.credential;
+    const data = JSON.parse(atob(response.credential.split(".")[1]));
+    document.getElementById("mensagem").textContent = `Logado com ${data.email}!`;
+    window.tokenLogado = data.email;
+  }
+</script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 

@@ -3,7 +3,7 @@
 // A tarefa consiste em levar gerarDesenho para o servidor (Pages Functions)
 // e fazer esta pagina apenas enviar o numero e exibir a resposta.
 
-import { numeroValido } from "./desenho.js";
+function numeroValido(n) { return Number.isInteger(n) && n >= 1 && n <= 100; }
 
 const formulario = document.getElementById("formulario");
 const campoNumero = document.getElementById("numero");
