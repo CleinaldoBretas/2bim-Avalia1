@@ -2,7 +2,7 @@ name = "2bi,-avalia1-cleinaldo-bretas"
 compatibility_date = "2026-10-07"
 
 [assets]
-directory = "./"
-not_found_handling = "sirgle-page-application"
+directory = "./public"
+
 [vars]
 GOOGLE_CLIENT_ID = "626344497877-vrokq3fhbn9cmipktbmhppvt8fjk7gon.apps.googleusercontent.com"
