@@ -16,6 +16,7 @@ export async function onRequestPost(ctx){
   const token = auth.slice(7);
 
   const r = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${token}`);
+  
   if(!r.ok) return new Response("Token invalido",{status:401});
   const payload = await r.json();
 
