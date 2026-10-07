@@ -20,7 +20,7 @@ export async function onRequestPost(ctx){
   if(!r.ok) return new Response("Token invalido",{status:401});
   const payload = await r.json();
 
-  if(payload.aud !== env.GOOGLE_CLIENT_ID || payload.email_verified !== "true"){
+  if(payload.aud !== env.GOOGLE_CLIENT_ID || payload.email_verified !== true){
     return new Response("Token nao autorizado",{status:401});
   }
 
