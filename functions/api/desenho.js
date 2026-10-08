@@ -1,54 +1,39 @@
 import { gerarDesenho } from "../../lib/desenho.js";
 
-function resposta(status, mensagem) {
-  return new Response(JSON.stringify({ erro: mensagem }), {
+const resp = (corpo, status, tipo = "application/json") =>
+  new Response(typeof corpo === "string" ? corpo : JSON.stringify(corpo), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": tipo },
   });
-}
 
-export async function onRequest({ request, env }) {
-  // 1) método
-  if (request.method !== "POST") {
-    return new Response("Método não permitido", {
-      status: 405,
-      headers: { Allow: "POST" },
-    });
-  }
-
-  // 2) corpo
-  let corpo;
+export async function onRequestPost({ request, env }) {
+  let dados;
   try {
-    corpo = await request.json();
+    dados = await request.json();
   } catch {
-    return resposta(400, "JSON inválido ou corpo ausente");
-  }
-  const numero = corpo && corpo.numero;
-  if (!Number.isInteger(numero) || numero < 1 || numero > 100) {
-    return resposta(400, "numero deve ser um inteiro entre 1 e 100");
+    return resp({ erro: "Corpo inválido" }, 400);
   }
 
-  // 3) token
-  const auth = request.headers.get("Authorization") || "";
-  const m = auth.match(/^Bearer\s+(.+)$/i);
-  if (!m) return resposta(401, "Token ausente");
-
-  let info;
-  try {
-    const r = await fetch(
-      "https://oauth2.googleapis.com/tokeninfo?id_token=" + encodeURIComponent(m[1])
-    );
-    if (r.status !== 200) return resposta(401, "Token inválido ou expirado");
-    info = await r.json();
-  } catch {
-    return resposta(401, "Não foi possível verificar o token");
+  const numero = Number(dados.numero);
+  if (!Number.isInteger(numero) || numero < 1) {
+    return resp({ erro: "Número inválido" }, 400);
   }
 
-  if (info.aud !== env.GOOGLE_CLIENT_ID) return resposta(401, "aud diferente do Client ID");
-  if (String(info.email_verified) !== "true") return resposta(401, "E-mail não verificado");
-  if (!info.email) return resposta(401, "Token sem e-mail");
+  if (!dados.token) {
+    return resp({ erro: "Token ausente" }, 401);
+  }
 
-  // 200
-  const svg = gerarDesenho(numero, info.email);
-  return new Response(svg, { status: 200, headers: { "Content-Type": "image/svg+xml" } });
+  const r = await fetch(
+    "https://oauth2.googleapis.com/tokeninfo?id_token=" +
+      encodeURIComponent(dados.token)
+  );
+  if (r.status !== 200) return resp({ erro: "Token inválido" }, 401);
+
+  const info = await r.json();
+  if (info.aud !== env.GOOGLE_CLIENT_ID || info.email_verified !== "true") {
+    return resp({ erro: "Token não aceito" }, 401);
+  }
+
+  const svg = gerarDesenho(numero, info.email); // e-mail vem do token
+  return resp(svg, 200, "image/svg+xml");
 }
