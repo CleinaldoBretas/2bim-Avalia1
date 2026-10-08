@@ -15,7 +15,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   const numero = Number(dados.numero);
-  if (!Number.isInteger(numero) || numero < 1) {
+  if (!Number.isInteger(numero) || numero < 1 || numero > 100) {
     return resp({ erro: "Número inválido" }, 400);
   }
 
@@ -27,13 +27,24 @@ export async function onRequestPost({ request, env }) {
     "https://oauth2.googleapis.com/tokeninfo?id_token=" +
       encodeURIComponent(dados.token)
   );
-  if (r.status !== 200) return resp({ erro: "Token inválido" }, 401);
-
-  const info = await r.json();
-  if (info.aud !== env.GOOGLE_CLIENT_ID || info.email_verified !== "true") {
-    return resp({ erro: "Token não aceito" }, 401);
+  if (r.status !== 200) {
+    return resp({ erro: "Token inválido", status_google: r.status }, 401);
   }
 
-  const svg = gerarDesenho(numero, info.email); // e-mail vem do token
+  const info = await r.json();
+
+  // DIAGNÓSTICO TEMPORÁRIO: remover depois
+  if (info.aud !== env.GOOGLE_CLIENT_ID) {
+    return resp({
+      erro: "aud diferente",
+      aud_do_token: info.aud,
+      client_id_configurado: env.GOOGLE_CLIENT_ID ?? null,
+    }, 401);
+  }
+  if (info.email_verified !== "true") {
+    return resp({ erro: "e-mail não verificado" }, 401);
+  }
+
+  const svg = gerarDesenho(numero, info.email);
   return resp(svg, 200, "image/svg+xml");
 }
