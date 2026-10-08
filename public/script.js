@@ -3,68 +3,37 @@
 // A tarefa consiste em levar gerarDesenho para o servidor (Pages Functions)
 // e fazer esta pagina apenas enviar o numero e exibir a resposta.
 
-function numeroValido(n) { return Number.isInteger(n) && n >= 1 && n <= 1000; }
+let idToken = null;
 
-const formulario = document.getElementById("formulario");
-const campoNumero = document.getElementById("numero");
-const area = document.getElementById("desenho");
-const mensagem = document.getElementById("mensagem");
-const botaoBaixar = document.getElementById("baixar");
+function onGoogleLogin(resp) {
+  idToken = resp.credential;
+  document.getElementById("erro").textContent = "";
+}
 
-let svgAtual = "";
+function mostrarErro(msg) {
+  document.getElementById("erro").textContent = msg;
+  document.getElementById("saida").innerHTML = "";
+}
 
-formulario.addEventListener("submit", async (evento) => {
-  evento.preventDefault();
-  mensagem.textContent = "";
-  area.innerHTML = "";
+document.getElementById("form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const numero = Number(document.getElementById("numero").value);
 
-  const numero = Number(campoNumero.value);
+  if (!idToken) return mostrarErro("Faça login com o Google primeiro.");
 
-  if (!window.idToken) {
-    mensagem.textContent = "Faça login com Google para desenhar";
-    return;
-  }
+  const resp = await fetch("/api/desenho", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + idToken,
+    },
+    body: JSON.stringify({ numero }),
+  });
 
-  if (!numeroValido(numero)) {
-    mensagem.textContent = "Digite um inteiro entre 1 e 1000";
-    return;
-  }
+  if (resp.status === 400) return mostrarErro("Número inválido: informe um inteiro de 1 a 100.");
+  if (resp.status === 401) return mostrarErro("Não autorizado: faça login com o Google novamente.");
+  if (!resp.ok) return mostrarErro("Erro inesperado (" + resp.status + ").");
 
-  try {
-    const res = await fetch("/api/desenho", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ numero: numero, token: window.idToken })
-    });
-
-    const data = await res.json();
-
-    if (res.status === 401) {
-      mensagem.textContent = "Não autorizado: token inválido ou expirado";
-      return;
-    }
-
-    if (res.status === 400) {
-      mensagem.textContent = "Erro: " + (data.erro || "requisição inválida");
-      return;
-    }
-
-    svgAtual = data.svg;
-    area.innerHTML = svgAtual;
-    botaoBaixar.disabled = false;
-
-  } catch (e) {
-    mensagem.textContent = "Erro ao conectar com o servidor";
-  }
-});
-
-// Função de baixar que já tinha
-botaoBaixar.addEventListener("click", () => {
-  if (!svgAtual) return;
-  const blob = new Blob([svgAtual], { type: "image/svg+xml" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "desenho.svg";
-  a.click();
+  document.getElementById("erro").textContent = "";
+  document.getElementById("saida").innerHTML = await resp.text();
 });
