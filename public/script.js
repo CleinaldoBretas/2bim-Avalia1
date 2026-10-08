@@ -5,35 +5,32 @@
 
 let idToken = null;
 
-function onGoogleLogin(resp) {
-  idToken = resp.credential;
-  document.getElementById("erro").textContent = "";
+function onLogin(resposta) {
+  idToken = resposta.credential; // id_token do Google
 }
 
-function mostrarErro(msg) {
-  document.getElementById("erro").textContent = msg;
-  document.getElementById("saida").innerHTML = "";
-}
-
-document.getElementById("form").addEventListener("submit", async (e) => {
+document.querySelector("form").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const numero = Number(document.getElementById("numero").value);
+  const erro = document.getElementById("erro");
+  const saida = document.getElementById("resultado");
+  erro.textContent = "";
+  saida.innerHTML = "";
 
-  if (!idToken) return mostrarErro("Faça login com o Google primeiro.");
+  const numero = document.querySelector("#numero").value; // ajuste o id
 
-  const resp = await fetch("/api/desenho", {
+  const r = await fetch("/api/desenho", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + idToken,
-    },
-    body: JSON.stringify({ numero }),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ numero, token: idToken }),
   });
 
-  if (resp.status === 400) return mostrarErro("Número inválido: informe um inteiro de 1 a 100.");
-  if (resp.status === 401) return mostrarErro("Não autorizado: faça login com o Google novamente.");
-  if (!resp.ok) return mostrarErro("Erro inesperado (" + resp.status + ").");
-
-  document.getElementById("erro").textContent = "";
-  document.getElementById("saida").innerHTML = await resp.text();
+  if (r.status === 400) {
+    erro.textContent = "Erro 400: número inválido.";
+  } else if (r.status === 401) {
+    erro.textContent = "Erro 401: faça login com o Google.";
+  } else if (!r.ok) {
+    erro.textContent = "Erro inesperado: " + r.status;
+  } else {
+    saida.innerHTML = await r.text();
+  }
 });
