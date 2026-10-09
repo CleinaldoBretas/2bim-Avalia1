@@ -24,4 +24,4 @@ Framework preset: `None`. Build command: vazio. Build output directory: `public`
 
 Nome:Cleinaldo Ferreira Bretas
 RA: 2026108872
-URL: https://2bim-avalia1-cleinaldo-bretas.cleinaldof.workers.dev
+URL: https://2bim-avalia1-cleinaldo.pages.dev
